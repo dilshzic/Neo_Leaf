@@ -1,3 +1,6 @@
+# Standard Android .gitignore
+
+# Built objects
 *.iml
 .gradle
 /local.properties
@@ -12,7 +15,24 @@
 /captures
 .externalNativeBuild
 .cxx
-local.properties
 
-# Project exclude paths
+# Specific build directories
+/app/build/
 /alx-core-pdf/build/
+
+# IDE and Environment
+.idea/
+*.iws
+*.ipr
+
+# OS generated files
+Thumbs.db
+db.lock
+
+# Log files
+*.log
+
+# Mobile specific
+*.apk
+*.ap_
+*.dex
