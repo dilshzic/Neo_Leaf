@@ -1,13 +1,23 @@
+import org.gradle.api.publish.PublishingExtension
+import org.gradle.api.publish.maven.MavenPublication
+
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.devtools.ksp)
     alias(libs.plugins.jetbrains.kotlin.plugin.serialization)
+    id("maven-publish")
 }
 
 android {
     namespace = "com.algorithmx.core.pdf"
     compileSdk = 37
+
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+        }
+    }
 
     defaultConfig {
         minSdk = 31
@@ -62,4 +72,17 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+}
+
+afterEvaluate {
+    extensions.configure<PublishingExtension> {
+        publications {
+            create<MavenPublication>("release") {
+                from(components["release"])
+                groupId = "com.github.dilshzic"
+                artifactId = "alx-core-pdf"
+                version = "1.0.0"
+            }
+        }
+    }
 }
