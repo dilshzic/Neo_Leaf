@@ -53,6 +53,8 @@ dependencies {
     implementation(libs.androidx.pdf.viewer.fragment)
     implementation(libs.androidx.pdf.ink)
     implementation(libs.pdfbox.android)
+    implementation(libs.jp2.android)
+    implementation(libs.jbig2.imageio)
 
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)

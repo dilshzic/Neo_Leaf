@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -29,6 +30,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.List
+import androidx.compose.material.icons.rounded.AccountTree
 import androidx.compose.material.icons.rounded.Bookmark
 import androidx.compose.material.icons.rounded.BookmarkBorder
 import androidx.compose.material.icons.rounded.Description
@@ -85,10 +87,11 @@ import androidx.core.view.WindowCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
+import com.algorithmx.core.pdf.ui.AlxPdfViewer
 import com.algorithmx.neoleaf.ui.extraction.ExtractionScreen
-import com.algorithmx.neoleaf.ui.reader.PdfViewerFragmentHost
 import com.algorithmx.neoleaf.ui.reader.ReaderViewModel
 import com.algorithmx.neoleaf.ui.reader.TocItem
+import com.algorithmx.neoleaf.ui.toc_extraction.TocExtractionScreen
 import com.algorithmx.neoleaf.ui.theme.NeoLeafTheme
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import kotlinx.serialization.Serializable
@@ -103,6 +106,8 @@ sealed class Route {
     data class Viewer(val uriString: String) : Route()
     @Serializable
     data object Extraction : Route()
+    @Serializable
+    data object TocExtraction : Route()
 }
 
 class MainActivity : AppCompatActivity() {
@@ -173,6 +178,9 @@ class MainActivity : AppCompatActivity() {
                         },
                         onOpenExtraction = {
                             backStack.add(Route.Extraction)
+                        },
+                        onOpenTocExtraction = {
+                            backStack.add(Route.TocExtraction)
                         }
                     )
                 }
@@ -220,15 +228,19 @@ class MainActivity : AppCompatActivity() {
                             )
                         }
                     ) { innerPadding ->
-                        PdfViewerFragmentHost(
+                        AlxPdfViewer(
                             uri = uri,
-                            viewModel = readerViewModel,
+                            saveCommands = readerViewModel.saveCommands,
+                            jumpToPageCommands = readerViewModel.jumpToPageCommands,
                             modifier = Modifier.padding(innerPadding).fillMaxSize()
                         )
                     }
                 }
                 entry<Route.Extraction> {
                     ExtractionScreen(onBack = { backStack.removeLastOrNull() })
+                }
+                entry<Route.TocExtraction> {
+                    TocExtractionScreen(onBack = { backStack.removeLastOrNull() })
                 }
             }
         )
@@ -499,6 +511,7 @@ fun UnsupportedDeviceScreen() {
 fun PdfPickerScreen(
     onPdfSelected: (Uri) -> Unit,
     onOpenExtraction: () -> Unit,
+    onOpenTocExtraction: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -577,6 +590,22 @@ fun PdfPickerScreen(
             Icon(Icons.Rounded.SettingsEthernet, contentDescription = null)
             Spacer(modifier = Modifier.width(12.dp))
             Text("Extraction Pipeline", style = MaterialTheme.typography.titleMedium)
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        OutlinedButton(
+            onClick = onOpenTocExtraction,
+            modifier = Modifier.fillMaxWidth(0.7f),
+            contentPadding = PaddingValues(16.dp),
+            shape = MaterialTheme.shapes.large,
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = MaterialTheme.colorScheme.tertiary
+            )
+        ) {
+            Icon(Icons.Rounded.AccountTree, contentDescription = null)
+            Spacer(modifier = Modifier.width(12.dp))
+            Text("TOC Extraction", style = MaterialTheme.typography.titleMedium)
         }
     }
 }

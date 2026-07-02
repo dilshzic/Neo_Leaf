@@ -71,16 +71,16 @@ fun ExtractionScreen(
                         Text("Extracting contents...", style = MaterialTheme.typography.bodyMedium)
                     }
                 }
-            } else if (uiState.text.isEmpty() && uiState.images.isEmpty()) {
+            } else if (uiState.text.isEmpty() && uiState.images.isEmpty() && uiState.error == null && uiState.textError == null && uiState.imageError == null) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(
                         modifier = Modifier.padding(32.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = uiState.error ?: "Select pages to extract",
+                            text = "Select pages to extract",
                             style = MaterialTheme.typography.bodyLarge,
-                            color = if (uiState.error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         
                         Spacer(modifier = Modifier.height(24.dp))
@@ -110,6 +110,16 @@ fun ExtractionScreen(
                         }
                     }
                 }
+            } else if (uiState.error != null) {
+                 Box(modifier = Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
+                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                         Text(uiState.error!!, color = MaterialTheme.colorScheme.error, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                         Spacer(modifier = Modifier.height(24.dp))
+                         Button(onClick = { launcher.launch(arrayOf("application/pdf")) }) {
+                             Text("Try Again")
+                         }
+                     }
+                 }
             } else {
                 PrimaryTabRow(
                     selectedTabIndex = selectedTab,
@@ -129,9 +139,9 @@ fun ExtractionScreen(
                 }
 
                 if (selectedTab == 0) {
-                    TextExtractionView(uiState.text)
+                    TextExtractionView(uiState.text, uiState.textError)
                 } else {
-                    ImageExtractionView(uiState.images)
+                    ImageExtractionView(uiState.images, uiState.imageError)
                 }
             }
         }
@@ -139,7 +149,7 @@ fun ExtractionScreen(
 }
 
 @Composable
-fun TextExtractionView(text: String) {
+fun TextExtractionView(text: String, error: String?) {
     val context = LocalContext.current
     Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Card(
@@ -148,77 +158,100 @@ fun TextExtractionView(text: String) {
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
         ) {
             Column(modifier = Modifier.verticalScroll(rememberScrollState()).padding(16.dp)) {
+                if (error != null) {
+                    Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
                 Text(
-                    text = text,
+                    text = text.ifEmpty { if (error == null) "No text found in selected pages." else "" },
                     style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
         }
         
-        Column(
-            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            FloatingActionButton(
-                onClick = {
-                    val intent = Intent(Intent.ACTION_SEND).apply {
-                        type = "text/plain"
-                        putExtra(Intent.EXTRA_TEXT, text)
-                    }
-                    context.startActivity(Intent.createChooser(intent, "Share Text"))
-                },
-                containerColor = MaterialTheme.colorScheme.secondaryContainer
+        if (text.isNotEmpty()) {
+            Column(
+                modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(Icons.Rounded.Share, contentDescription = "Share Text")
-            }
-            
-            FloatingActionButton(
-                onClick = {
-                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                    val clip = android.content.ClipData.newPlainText("Extracted PDF Text", text)
-                    clipboard.setPrimaryClip(clip)
-                },
-                containerColor = MaterialTheme.colorScheme.primaryContainer
-            ) {
-                Icon(Icons.Rounded.ContentCopy, contentDescription = "Copy Text")
+                FloatingActionButton(
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, text)
+                        }
+                        context.startActivity(Intent.createChooser(intent, "Share Text"))
+                    },
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                ) {
+                    Icon(Icons.Rounded.Share, contentDescription = "Share Text")
+                }
+                
+                FloatingActionButton(
+                    onClick = {
+                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                        val clip = android.content.ClipData.newPlainText("Extracted PDF Text", text)
+                        clipboard.setPrimaryClip(clip)
+                    },
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                ) {
+                    Icon(Icons.Rounded.ContentCopy, contentDescription = "Copy Text")
+                }
             }
         }
     }
 }
 
 @Composable
-fun ImageExtractionView(images: List<Bitmap>) {
+fun ImageExtractionView(images: List<Bitmap>, error: String?) {
     val context = LocalContext.current
-    LazyVerticalGrid(
-        columns = GridCells.Adaptive(128.dp),
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(images) { bitmap ->
-            Card(
-                modifier = Modifier.aspectRatio(1f),
-                shape = MaterialTheme.shapes.medium
+    Column(modifier = Modifier.fillMaxSize()) {
+        if (error != null) {
+            Text(
+                text = error,
+                modifier = Modifier.padding(16.dp),
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+        
+        if (images.isEmpty() && error == null) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("No images found in selected pages.", style = MaterialTheme.typography.bodyMedium)
+            }
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(128.dp),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Box {
-                    Image(
-                        bitmap = bitmap.asImageBitmap(),
-                        contentDescription = "Extracted Image",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                    IconButton(
-                        onClick = { shareImage(context, bitmap) },
-                        modifier = Modifier.align(Alignment.TopEnd).padding(4.dp)
+                items(images) { bitmap ->
+                    Card(
+                        modifier = Modifier.aspectRatio(1f),
+                        shape = MaterialTheme.shapes.medium
                     ) {
-                        Icon(
-                            Icons.Rounded.Share,
-                            contentDescription = "Share Image",
-                            tint = Color.White,
-                            modifier = Modifier.background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f), shape = MaterialTheme.shapes.small)
-                        )
+                        Box {
+                            Image(
+                                bitmap = bitmap.asImageBitmap(),
+                                contentDescription = "Extracted Image",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                            IconButton(
+                                onClick = { shareImage(context, bitmap) },
+                                modifier = Modifier.align(Alignment.TopEnd).padding(4.dp)
+                            ) {
+                                Icon(
+                                    Icons.Rounded.Share,
+                                    contentDescription = "Share Image",
+                                    tint = Color.White,
+                                    modifier = Modifier.background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f), shape = MaterialTheme.shapes.small)
+                                )
+                            }
+                        }
                     }
                 }
             }

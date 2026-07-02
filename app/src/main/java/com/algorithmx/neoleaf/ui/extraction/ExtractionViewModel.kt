@@ -18,6 +18,8 @@ data class ExtractionState(
     val text: String = "",
     val images: List<Bitmap> = emptyList(),
     val error: String? = null,
+    val textError: String? = null,
+    val imageError: String? = null,
     val pageRangeInput: String = ""
 )
 
@@ -73,7 +75,12 @@ class ExtractionViewModel(application: Application) : AndroidViewModel(applicati
                  }
             } else null
 
-            _uiState.value = _uiState.value.copy(isExtracting = true, error = null)
+            _uiState.value = _uiState.value.copy(
+                isExtracting = true, 
+                error = null, 
+                textError = null, 
+                imageError = null
+            )
             
             withContext(Dispatchers.IO) {
                 val result = extractionEngine.extractFullContent(uri, pageIndices)
@@ -82,7 +89,9 @@ class ExtractionViewModel(application: Application) : AndroidViewModel(applicati
                         isExtracting = false,
                         text = result.text,
                         images = result.images,
-                        error = result.error
+                        textError = result.textError,
+                        imageError = result.imageError,
+                        error = result.generalError
                     )
                 }
             }

@@ -11,8 +11,19 @@ data class AlxTocItem(
     val level: Int = 0
 )
 
+data class AlxPdfSection(
+    val title: String,
+    val startPage: Int,
+    val endPage: Int,
+    val level: Int
+) {
+    val isSinglePage: Boolean = startPage == endPage
+}
+
 data class AlxExtractionResult(
     val text: String = "",
     val images: List<Bitmap> = emptyList(),
-    val error: String? = null
+    val textError: String? = null,
+    val imageError: String? = null,
+    val generalError: String? = null
 )
