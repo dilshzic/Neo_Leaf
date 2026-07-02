@@ -232,6 +232,7 @@ class MainActivity : AppCompatActivity() {
                             uri = uri,
                             saveCommands = readerViewModel.saveCommands,
                             jumpToPageCommands = readerViewModel.jumpToPageCommands,
+                            onDocumentLoaded = { readerViewModel.onDocumentLoaded() },
                             modifier = Modifier.padding(innerPadding).fillMaxSize()
                         )
                     }

@@ -44,6 +44,9 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
     private val _jumpToPageCommands = MutableSharedFlow<Int>()
     val jumpToPageCommands: SharedFlow<Int> = _jumpToPageCommands
 
+    private val _isDocumentReady = MutableStateFlow(false)
+    val isDocumentReady: StateFlow<Boolean> = _isDocumentReady
+
     private val mutex = Mutex()
     private var currentLoadingUri: Uri? = null
 
@@ -57,6 +60,10 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch {
             _jumpToPageCommands.emit(pageIndex)
         }
+    }
+
+    fun onDocumentLoaded() {
+        _isDocumentReady.value = true
     }
 
     fun toggleBookmark(uri: Uri, pageIndex: Int) {
@@ -77,6 +84,7 @@ class ReaderViewModel(application: Application) : AndroidViewModel(application) 
                 _thumbnails.value = emptyList()
                 _pageCount.value = 0
                 _toc.value = emptyList()
+                _isDocumentReady.value = false
             }
 
             // Observe bookmarks

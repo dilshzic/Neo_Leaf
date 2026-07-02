@@ -19,7 +19,8 @@ fun AlxPdfViewer(
     uri: Uri,
     modifier: Modifier = Modifier,
     saveCommands: SharedFlow<Unit>? = null,
-    jumpToPageCommands: SharedFlow<Int>? = null
+    jumpToPageCommands: SharedFlow<Int>? = null,
+    onDocumentLoaded: (() -> Unit)? = null
 ) {
     val fragmentState = remember { mutableStateOf<AlxPdfFragment?>(null) }
 
@@ -27,6 +28,9 @@ fun AlxPdfViewer(
         modifier = modifier.fillMaxSize(),
         onUpdate = { fragment ->
             fragmentState.value = fragment
+            // Set callback immediately
+            fragment.onDocumentLoaded = onDocumentLoaded
+
             if (fragment.isAdded && fragment.documentUri != uri) {
                 fragment.documentUri = uri
             }
